@@ -1,6 +1,7 @@
 
 import re
 import json
+import uuid
 
 import aiohttp
 
@@ -42,6 +43,10 @@ def item_prompt(item):
 #####
 
 
+def uuid4():
+    return str(uuid.uuid4())
+
+
 async def yagpt_call(prompt):
     async with aiohttp.ClientSession() as session:
         async with session.ws_connect('wss://uniproxy.alice.ya.ru/uni.ws', timeout=5) as ws:
@@ -63,12 +68,15 @@ async def yagpt_call(prompt):
             message = await ws.receive()
             assert 'В этом режиме я помогаю придумывать — идеи, тексты на разные темы и многое другое' in message.data, message.data
     
+            stack_session_id = uuid4()
             for step in range(5):
                 if step == 0:
                     data = '{"event":{"header":{"namespace":"Vins","name":"TextInput","messageId":"7499a1ef-9c4c-4097-8872-6f9bace8cba4","seqNumber":7},"payload":{"application":{"app_id":"ru.yandex.webdesktop","app_version":"2023-07-04-318","platform":"macos","os_version":"mozilla/5.0 (macintosh; intel mac os x 10_15_7) applewebkit/605.1.15 (khtml, like gecko) version/16.5.1 safari/605.1.15","uuid":"00000000000009431933201688623980","lang":"ru-RU","client_time":"20230706T062211","timezone":"Europe/Moscow","timestamp":"1688624531"},"header":{"prev_req_id":"4642bc9d-c4fc-4286-a4a4-5d435039729b","sequence_number":null,"request_id":"8d524be4-4540-4492-894d-b37c0191e69d","dialog_id":"b7c42cab-db61-46ba-871a-b10a6ecf3e0d"},"request":{"event":{"type":"suggested_input","text":"Как уговорить мужа купить кота"},"voice_session":false,"experiments":["set_symbols_per_second=200","search_use_cloud_ui","weather_use_cloud_ui","enable_open_link_and_cloud_ui","hw_onboarding_enable_greetings","remove_feedback_suggests","shopping_list","enable_external_skills_for_webdesktop_and_webtouch","send_show_view_directive_on_supports_show_view_layer_content_interface","use_app_host_pure_Dialogovo_scenario"],"additional_options":{"bass_options":{"screen_scale_factor":2},"supported_features":["open_link","server_action","cloud_ui","cloud_first_screen_div","cloud_ui_filling","show_promo","show_view_layer_content","reminders_and_todos","div2_cards","print_text_in_message_view","supports_print_text_in_message_view"],"unsupported_features":["player_pause_directive"]},"location":{"lat":55.755863,"lon":37.6177}},"format":"audio/ogg;codecs=opus","mime":"audio/x-pcm;bit=16;rate=16000","topic":"desktopgeneral"}}}'
                     data = data.replace('"Как уговорить мужа купить кота"', json.dumps(prompt))
+                    data = data.replace('8d524be4-4540-4492-894d-b37c0191e69d', stack_session_id)
                 else:
                     data = '{"event":{"header":{"namespace":"Vins","name":"TextInput","messageId":"2aa61cfb-17b8-4ffd-982c-45593a14faaa","seqNumber":8},"payload":{"application":{"app_id":"ru.yandex.webdesktop","app_version":"2023-07-04-318","platform":"macos","os_version":"mozilla/5.0 (macintosh; intel mac os x 10_15_7) applewebkit/605.1.15 (khtml, like gecko) version/16.5.1 safari/605.1.15","uuid":"00000000000009431933201688623980","lang":"ru-RU","client_time":"20230706T062213","timezone":"Europe/Moscow","timestamp":"1688624533"},"header":{"prev_req_id":"8d524be4-4540-4492-894d-b37c0191e69d","sequence_number":null,"request_id":"a97f4954-b291-4e0b-ab2d-bb8e8057d414","dialog_id":"b7c42cab-db61-46ba-871a-b10a6ecf3e0d"},"request":{"event":{"type":"server_action","name":"@@mm_stack_engine_get_next","payload":{"@request_id":"8d524be4-4540-4492-894d-b37c0191e69d","stack_session_id":"8d524be4-4540-4492-894d-b37c0191e69d","@recovery_params":{},"@scenario_name":"Dialogovo","stack_product_scenario_name":"dialogovo"}},"voice_session":false,"experiments":["set_symbols_per_second=200","search_use_cloud_ui","weather_use_cloud_ui","enable_open_link_and_cloud_ui","hw_onboarding_enable_greetings","remove_feedback_suggests","shopping_list","enable_external_skills_for_webdesktop_and_webtouch","send_show_view_directive_on_supports_show_view_layer_content_interface","use_app_host_pure_Dialogovo_scenario"],"additional_options":{"bass_options":{"screen_scale_factor":2},"supported_features":["open_link","server_action","cloud_ui","cloud_first_screen_div","cloud_ui_filling","show_promo","show_view_layer_content","reminders_and_todos","div2_cards","print_text_in_message_view","supports_print_text_in_message_view"],"unsupported_features":["player_pause_directive"]},"location":{"lat":55.755863,"lon":37.6177}},"format":"audio/ogg;codecs=opus","mime":"audio/x-pcm;bit=16;rate=16000","topic":"desktopgeneral"}}}'
+                    data = data.replace('8d524be4-4540-4492-894d-b37c0191e69d', stack_session_id)
 
                 await ws.send_str(data)
                 message = await ws.receive(timeout=10)
