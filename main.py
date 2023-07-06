@@ -76,7 +76,7 @@ async def yagpt_call(prompt):
                 match = re.search(r'"is_end":(true|false),"prefetch_after_ms":\d+,"text":"(.*)","should_rewrite":(true|false)', message.data)
                 assert match, message.data
                 is_end, text, should_rewrite = match.groups()
-                answer += text
+                answer += text.replace(r'\n', '\n')
                 
                 if is_end == 'true':
                     break
